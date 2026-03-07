@@ -13,9 +13,12 @@ import os
 import pandas as pd
 import numpy as np
 
-from models.baseline import train_logistic, train_lightgbm
-from evaluate import compute_classification_metrics, ranking_metrics
-from feature_registry import get_training_columns, validate_no_banned_columns
+from .models.baseline import train_logistic, train_lightgbm
+from .evaluate import compute_classification_metrics, ranking_metrics
+from .feature_registry import get_training_columns, validate_no_banned_columns
+from .utils import get_git_commit, write_run_metadata, ensure_dir
+from .seed import set_seed
+import time
 
 
 def load_processed(processed_dir: str):
@@ -49,6 +52,9 @@ def save_metrics(metrics: dict, path: Path):
 
 def run(config_path: str, model_name: str):
     cfg = yaml.safe_load(open(config_path))
+    # set seed for reproducibility
+    seed = cfg.get("seed", 42)
+    set_seed(seed)
     processed_dir = cfg.get("processed_dir", "data/processed")
     X, y, meta, train_idx, val_idx, test_idx = load_processed(processed_dir)
 
@@ -101,21 +107,28 @@ def run(config_path: str, model_name: str):
     metrics_out = {"val": val_metrics, "test": test_metrics}
     save_metrics(metrics_out, metrics_dir / f"{model_name}_metrics.json")
 
+    # write run metadata for reproducibility
+    ensure_dir("reports/runs")
+    run_meta = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "config_path": config_path,
+        "config": cfg,
+        "git_commit": get_git_commit(),
+        "dataset": {"n_train": len(train_idx), "n_val": len(val_idx), "n_test": len(test_idx)},
+        "metrics": metrics_out,
+    }
+    write_run_metadata(f"reports/runs/{model_name}_run_{int(time.time())}.json", run_meta)
+
     # Save prediction CSVs with id, truth, prob
     def make_pred_df(idx_list, probs, split_name):
-        df_idx = X.loc[idx_list].copy()
-        # try to include id columns for clarity
-        ids = []
-        for col in ["user_id", "video_id"]:
-            if col in df_idx.columns:
-                ids.append(df_idx[col])
+        # Prefer to include id columns from meta (processed meta contains ids + timestamp)
         out = pd.DataFrame()
-        if not ids:
-            out["row_index"] = idx_list
+        if not meta.empty and any(c in meta.columns for c in ["user_id", "video_id"]):
+            for col in ["user_id", "video_id"]:
+                if col in meta.columns:
+                    out[col] = meta.loc[idx_list, col].values
         else:
-            for i, col in enumerate(["user_id", "video_id"]):
-                if col in df_idx.columns:
-                    out[col] = df_idx[col].values
+            out["row_index"] = idx_list
         out["y_true"] = y.loc[idx_list].values
         out["y_prob"] = probs
         return out

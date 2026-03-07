@@ -1,12 +1,12 @@
 import argparse
 import yaml
-from data_loader import load_csv
-from dataset import build_dataset, temporal_train_test_split
-from features import simple_preprocess
-from models.logreg import train_logreg
-from models.lgbm_model import train_lgbm
-from models.torch_mlp import train_mlp
-from eval import evaluate, precision_at_k_by_user
+from .data_loader import load_csv
+from .dataset import build_dataset, temporal_train_test_split
+from .features import simple_preprocess
+from .models.logreg import train_logreg
+from .models.lgbm_model import train_lgbm
+from .models.torch_mlp import train_mlp
+from .eval import evaluate, precision_at_k_by_user
 import os
 import joblib
 import numpy as np

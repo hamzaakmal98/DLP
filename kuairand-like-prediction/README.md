@@ -40,7 +40,7 @@ python -m venv .venv
 2. Install dependencies:
 
 ```powershell
-pip install -r kuairand-like-prediction/requirements.txt
+pip install -r requirements.txt
 ```
 
 Running training
@@ -48,7 +48,7 @@ Running training
 - Basic command (uses the config file to decide which models to run):
 
 ```powershell
-python -m kuairand-like-prediction.src.train --config kuairand-like-prediction/configs/default.yaml
+python -m src.train --config configs/default.yaml
 ```
 
 To run a single model, edit `configs/default.yaml` and set `train.models` to `['logreg']`,
@@ -58,6 +58,36 @@ Examples (change `models` in the config or create a short config snippet):
 - Baseline logistic regression (set `train.models: [logreg]` in the config and run the command above).
 - LightGBM (set `train.models: [lgbm]` and tune `models.lgbm` hyperparameters in the config).
 - PyTorch MLP (set `train.models: [mlp]` and tune `models.mlp` hyperparameters in the config).
+
+Sample / quick-test mode
+-----------------------
+- To make fast local testing easy, `configs/default.yaml` supports a `mode` field. Set
+	`data.mode: sample` to run the repository in sample mode.
+- Sample mode will first try to reuse any small CSVs found in common locations (for example
+	`data/sample/` or a nearby `rob/data/` folder). If no sample files are found, the repo will
+	generate a tiny synthetic dataset under `data/sample/` with the minimal table set:
+	`interactions.csv`, `users.csv`, `videos.csv`, and `video_stats.csv`.
+- Once sample mode is active, all preprocessing and training scripts will operate on these
+	small files so you can run end-to-end tests quickly:
+
+```powershell
+# prepare processed artifacts (will generate sample data if needed)
+# For real KuaiRand data use the data config which points at `real_data/KuaiRand-1K`:
+python -m src.run_preprocess --config configs/data.yaml
+
+# run baseline logistic on synthetic sample data
+python -m src.train_baseline --config configs/default.yaml --model logistic
+
+# run the MLP training on sample data
+python -m src.train_mlp --config configs/default.yaml
+```
+
+This mode is intended for quick verification and debugging; for final experiments use
+`data.mode: full` and point `data.path` (or the `data.dir`) at your KuaiRand CSVs.
+
+If you have a local full dataset, drop it under `real_data/` at the repository root. The
+preprocessing loader will automatically prefer `real_data/` for full runs (when
+`data.mode` is not `sample`).
 
 Evaluation
 - The training script saves models to the directory specified by `output.dir` in the config

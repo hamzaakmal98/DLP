@@ -16,10 +16,12 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
 
-from models.mlp import MLPModel
-from evaluate import compute_classification_metrics, ranking_metrics
-from feature_registry import get_training_columns, validate_no_banned_columns
-from utils import ensure_dir
+from .models.mlp import MLPModel
+from .evaluate import compute_classification_metrics, ranking_metrics
+from .feature_registry import get_training_columns, validate_no_banned_columns
+from .utils import ensure_dir, get_git_commit, write_run_metadata
+from .seed import set_seed
+import time
 
 
 def set_seed(seed: int):
@@ -170,7 +172,19 @@ def run(config_path: str):
     seed = cfg.get("seed", 42)
     set_seed(seed)
     global device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Prefer CUDA if available, otherwise try DirectML (for AMD on Windows), fall back to CPU
+    try:
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            try:
+                import torch_directml
+
+                device = torch_directml.device()
+            except Exception:
+                device = torch.device("cpu")
+    except Exception:
+        device = torch.device("cpu")
 
     # model
     hidden_sizes = cfg.get("hidden_sizes", [128, 64])
@@ -241,6 +255,18 @@ def run(config_path: str):
 
     print("Saved best checkpoint to", best_path)
     print("Saved metrics to reports/metrics/mlp_metrics.json")
+
+    # write run metadata
+    ensure_dir("reports/runs")
+    run_meta = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "config_path": config_path,
+        "config": cfg,
+        "git_commit": get_git_commit(),
+        "dataset": {"n_train": len(train_idx), "n_val": len(val_idx), "n_test": len(test_idx)},
+        "metrics": {"val": val_metrics, "test": test_metrics},
+    }
+    write_run_metadata(f"reports/runs/mlp_run_{int(time.time())}.json", run_meta)
 
 
 def cli():

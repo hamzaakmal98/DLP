@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-03-07T03:17:43Z",
+  "config_path": "configs/mlp.yaml",
+  "config": {
+    "processed_dir": "data/processed",
+    "feature_cols": null,
+    "hidden_sizes": [
+      128,
+      64
+    ],
+    "dropout": 0.2,
+    "lr": 0.001,
+    "batch_size": 128,
+    "epochs": 20,
+    "patience": 3,
+    "seed": 42
+  },
+  "git_commit": "473ceac",
+  "dataset": {
+    "n_train": 30120,
+    "n_val": 6455,
+    "n_test": 6456
+  },
+  "metrics": {
+    "val": {
+      "roc_auc": 0.66110954886916,
+      "pr_auc": 0.015341873898382813,
+      "log_loss": 0.029979055744581314,
+      "accuracy": 0.9951975213013168,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "prec_at_1": 0.007102272938936949,
+      "prec_at_5": 0.00572916679084301,
+      "prec_at_10": 0.0056581441313028336
+    },
+    "test": {
+      "roc_auc": 0.6696221915401029,
+      "pr_auc": 0.011703076990566169,
+      "log_loss": 0.029701339060867634,
+      "accuracy": 0.9951982651796778,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "prec_at_1": 0.0026281208265572786,
+      "prec_at_5": 0.004511607810854912,
+      "prec_at_10": 0.004745218437165022
+    }
+  }
+}

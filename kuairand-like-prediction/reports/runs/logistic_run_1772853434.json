@@ -1,0 +1,73 @@
+{
+  "timestamp": "2026-03-07T03:17:14Z",
+  "config_path": "configs/data.yaml",
+  "config": {
+    "data": {
+      "dir": "real_data/KuaiRand-1K/data",
+      "interactions": "log_random_4_22_to_5_08_1k.csv",
+      "users": "user_clusters.csv",
+      "videos": "",
+      "video_stats": ""
+    },
+    "target_col": "is_like",
+    "timestamp_col": "time_ms",
+    "id_cols": [
+      "user_id",
+      "video_id"
+    ],
+    "feature_groups": {
+      "allowed": [
+        "user_",
+        "video_",
+        "meta",
+        "hist_"
+      ],
+      "banned": [
+        "click",
+        "watch",
+        "exposure",
+        "future",
+        "outcome",
+        "label_"
+      ]
+    },
+    "impute": {
+      "numeric": "zero"
+    },
+    "test_frac": 0.15,
+    "val_frac": 0.15,
+    "processed_dir": "data/processed"
+  },
+  "git_commit": "473ceac",
+  "dataset": {
+    "n_train": 30120,
+    "n_val": 6455,
+    "n_test": 6456
+  },
+  "metrics": {
+    "val": {
+      "roc_auc": 0.5521281083035391,
+      "pr_auc": 0.006363622325314535,
+      "log_loss": 0.6339049315994296,
+      "accuracy": 0.6475600309837335,
+      "precision": 0.005726872246696035,
+      "recall": 0.41935483870967744,
+      "f1": 0.011299435028248588,
+      "prec_at_1": 0.004261363636363636,
+      "prec_at_5": 0.005445075757575757,
+      "prec_at_10": 0.005374053030303031
+    },
+    "test": {
+      "roc_auc": 0.5969474080582402,
+      "pr_auc": 0.007768776114401514,
+      "log_loss": 0.6561243155750849,
+      "accuracy": 0.6147769516728625,
+      "precision": 0.0072231139646869984,
+      "recall": 0.5806451612903226,
+      "f1": 0.014268727705112961,
+      "prec_at_1": 0.002628120893561104,
+      "prec_at_5": 0.004511607533946561,
+      "prec_at_10": 0.004745218280040883
+    }
+  }
+}

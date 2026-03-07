@@ -1,7 +1,15 @@
 data:
   path: data/KuaiRand-1K.csv
+  # run mode: 'full' (real data) or 'sample' (small synthetic or sample files)
+  mode: full
+  # optional sample directory override (used when mode=sample)
+  sample_dir: data/sample
   target: is_like
   timestamp_col: timestamp
+  id_cols: [user_id, video_id]
+  feature_groups:
+    allowed: ["user_", "video_", "meta", "hist_"]
+    banned: ["click", "watch", "exposure", "future", "outcome", "label_"]
 
 train:
   test_size: 0.2

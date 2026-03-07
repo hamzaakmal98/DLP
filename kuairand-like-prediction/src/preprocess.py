@@ -3,8 +3,9 @@ from typing import Dict, Tuple, List, Optional
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from .feature_registry import FeatureRegistry
+from .feature_registry import FeatureRegistry, get_training_columns, validate_no_banned_columns
 from .utils import save_df, ensure_dir
+import json
 
 
 def join_tables(tables: Dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -38,11 +39,20 @@ def separate_column_types(df: pd.DataFrame, id_cols: List[str] = None, target_co
     return {"ids": ids, "numeric": numeric, "categorical": categorical, "target": target}
 
 
-def apply_leakage_policy(df: pd.DataFrame, registry: FeatureRegistry) -> Tuple[pd.DataFrame, List[str]]:
-    """Remove banned columns using the provided registry and return removed list."""
+def apply_leakage_policy(df: pd.DataFrame, registry: FeatureRegistry, interaction_cols: Optional[List[str]] = None) -> Tuple[pd.DataFrame, List[str]]:
+    """Remove banned columns using the provided registry and return removed list.
+
+    If `interaction_cols` is provided, only columns that originate from the interactions
+    table (i.e., are present in `interaction_cols`) will be removed when matching banned
+    keywords. This prevents accidentally removing safely pre-computed video/user stats
+    that have similar names.
+    """
     cols = df.columns.tolist()
     parts = registry.filter_columns(cols)
     banned = parts.get("banned", [])
+    if interaction_cols is not None:
+        # Only drop banned columns that are present in the original interactions table
+        banned = [c for c in banned if c in set(interaction_cols)]
     df = df.drop(columns=banned, errors="ignore")
     return df, banned
 
@@ -109,10 +119,11 @@ def build_and_save_processed(tables: Dict[str, pd.DataFrame], config: Dict, proc
     # Setup registry from config
     allowed = config.get("feature_groups", {}).get("allowed", [])
     banned = config.get("feature_groups", {}).get("banned", [])
-    registry = FeatureRegistry(allowed_groups=allowed, banned_groups=banned)
+    registry = FeatureRegistry(allowed_groups=allowed, banned_keywords=banned)
 
-    # Apply leakage policy
-    df_clean, banned_cols = apply_leakage_policy(df, registry)
+    # Apply leakage policy — prefer to only remove banned columns that originate from interactions
+    interaction_cols = tables.get("interactions").columns.tolist() if "interactions" in tables else None
+    df_clean, banned_cols = apply_leakage_policy(df, registry, interaction_cols=interaction_cols)
 
     # Impute
     df_clean = impute_missing(df_clean, numeric_strategy=config.get("impute", {}).get("numeric", "zero"))
@@ -122,9 +133,26 @@ def build_and_save_processed(tables: Dict[str, pd.DataFrame], config: Dict, proc
 
     # Save artifacts
     save_df(df_clean, Path(processed_dir) / "dataset_joined.csv")
-    # Save typed column lists
+    # Save typed column lists (ids, numeric, categorical, target)
     for k, cols in col_types.items():
         Path(processed_dir).joinpath(f"cols_{k}.txt").write_text("\n".join(cols))
+
+    # Derive final training columns using registry (removes banned columns)
+    training_cols = get_training_columns(df_clean, registry)
+    # Ensure the timestamp column is not treated as a training feature
+    ts_col = config.get("timestamp_col", "timestamp")
+    if ts_col in training_cols:
+        training_cols = [c for c in training_cols if c != ts_col]
+    Path(processed_dir).joinpath("training_columns.txt").write_text("\n".join(training_cols))
+    # Save list of banned columns removed
+    Path(processed_dir).joinpath("banned_columns_removed.txt").write_text("\n".join(banned_cols))
+    # Save a JSON summary of features
+    feat_summary = {
+        "training_columns": training_cols,
+        "banned_columns_removed": banned_cols,
+        "col_types": col_types,
+    }
+    Path(processed_dir).joinpath("features_summary.json").write_text(json.dumps(feat_summary, indent=2))
 
     # Splits
     train_idx, val_idx, test_idx = temporal_splits(df_clean, timestamp_col=config.get("timestamp_col", "timestamp"), test_frac=config.get("test_frac", 0.15), val_frac=config.get("val_frac", 0.15), user_col=config.get("id_cols", ["user_id"])[:1][0])
@@ -137,8 +165,9 @@ def build_and_save_processed(tables: Dict[str, pd.DataFrame], config: Dict, proc
     # Prepare final X/y/meta and save
     target = config.get("target_col", "is_like")
     ids = col_types.get("ids", [])
-    meta = df_clean[ids + [config.get("timestamp_col", "timestamp")]] if ids else pd.DataFrame()
-    X = df_clean[[c for c in df_clean.columns if c not in ids + [target]]]
+    ts_col = config.get("timestamp_col", "timestamp")
+    meta = df_clean[ids + [ts_col]] if ids or ts_col in df_clean.columns else pd.DataFrame()
+    X = df_clean[[c for c in df_clean.columns if c not in ids + [target, ts_col]]]
     y = df_clean[target] if target in df_clean.columns else pd.Series(dtype=int)
     save_df(X, Path(processed_dir) / "X.csv")
     save_df(y.to_frame(name=target), Path(processed_dir) / "y.csv")

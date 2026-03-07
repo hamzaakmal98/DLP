@@ -1,12 +1,14 @@
 data:
-  dir: data
-  interactions: KuaiRand-1K/interactions.csv
-  users: KuaiRand-1K/users.csv
-  videos: KuaiRand-1K/videos.csv
-  video_stats: KuaiRand-1K/video_stats.csv
+  # point to the KuaiRand-1K snapshot under real_data for local full runs
+  dir: real_data/KuaiRand-1K/data
+  # if these are present they'll be used; otherwise loader will auto-detect common names
+  interactions: log_random_4_22_to_5_08_1k.csv
+  users: user_clusters.csv
+  videos: ''
+  video_stats: ''
 
 target_col: is_like
-timestamp_col: timestamp
+timestamp_col: time_ms
 id_cols: [user_id, video_id]
 
 feature_groups:

@@ -1,0 +1,27 @@
+embedding_dim: 16
+num_experts: 3
+expert_hidden_size: 128
+tower_hidden_size: 64
+loss_weights:
+  like: 1.0
+  long_view: 1.0
+  creator_interest: 1.0
+batch_size: 1024
+learning_rate: 0.001
+epochs: 5
+creator_task_enabled: false
+topk: [100]
+checkpoint_dir: artifacts/models/mmoe_amd
+forbidden_target_columns: [is_like, is_click, long_view, creator_interest]
+# Force use of GPU device; for AMD ROCm PyTorch builds this should be 'cuda'
+device: dml
+export_predictions: true
+predictions_path: artifacts/models/mmoe_amd/val_predictions.csv
+run_pareto: true
+pareto_k: 100
+pareto_score_cols: ['like_score', 'longview_score']
+pareto_out: artifacts/models/mmoe_amd/pareto_val.csv
+metrics_dir: artifacts/models/mmoe_amd/metrics
+plots_dir: artifacts/models/mmoe_amd/plots
+use_sampler: true
+primary_task: is_like
