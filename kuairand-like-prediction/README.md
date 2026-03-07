@@ -1,8 +1,7 @@
 # kuairand-like-prediction
 
 This repository is a compact, research-oriented prototype for predicting the `is_like` label
-in KuaiRand-style user × video interaction logs. It is intentionally small and focused so you can
-quickly iterate on dataset design, leakage control, baseline models, and evaluation.
+in KuaiRand-style user × video interaction logs. 
 
 Key goals
 - Provide tooling to load KuaiRand-format CSVs.
@@ -92,10 +91,5 @@ Planned extension toward MMoE
  3. Add multi-task loss weighting and evaluation (per-task metrics + combined ranking metrics).
  4. Compare single-task vs multi-task performance to validate transfer gains.
 
-Notes and next steps
-- This repository is intentionally small and opinionated to support course work and rapid
-	experimentation. If you want, I can add example notebooks, CI for tests, or scripts to
-	convert the original KuaiRand CSVs into the pre-exposure dataset format.
 
-License
-- Add your preferred license; none is included by default.
+
