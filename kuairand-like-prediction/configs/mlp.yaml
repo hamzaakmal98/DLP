@@ -1,0 +1,9 @@
+processed_dir: data/processed
+feature_cols: null  # if null, inferred from preprocessing outputs
+hidden_sizes: [128, 64]
+dropout: 0.2
+lr: 0.001
+batch_size: 128
+epochs: 20
+patience: 3
+seed: 42
