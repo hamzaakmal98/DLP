@@ -172,15 +172,6 @@ make full-report
 
 Notes: most `make` targets call the corresponding `scripts/*.py` entrypoint and accept the same CLI flags (e.g., `--out-root`, `--config`) when run manually. See `Makefile` for defaults.
 
-## Data Leakage Rules
-
-Strict rules to avoid leakage and ensure valid evaluation:
-
-1. Current-row engagement outcomes (targets) must not be used as features. They are strictly targets.
-2. Do not use future information from logs for training or feature construction (no peeking into the future).
-3. Use the random-exposure / A/B-style logs for unbiased evaluation when available; treat exposure logs carefully and do not treat exposure as a proxy for user preference unless explicitly modeled.
-4. Ensure train/validation/test splits respect temporal boundaries when applicable to avoid temporal leakage.
-5. Document any derived features and the exact data sources used for each feature in `data/interim/` and `docs/DATA_ENGINEERING.md`.
 
 ## Outputs
 
@@ -192,7 +183,6 @@ Key outputs and their locations:
 - Result tables and CSVs: `artifacts/tables/` and `reports/predictions/`
 - Metrics and evaluation reports: `reports/metrics/`
 
-Naming recommendations: include experiment id, config name, and timestamp in artifact filenames for traceability (e.g., `mmoe_exp01_20260307.pt`).
 
 ## Future Extensions
 
@@ -202,10 +192,3 @@ Naming recommendations: include experiment id, config name, and timestamp in art
 - Implement more robust model baselines (e.g., LightGBM, simple neural baselines) and automated comparison dashboards.
 
 ---
-
-If you'd like, I can now:
-
-- add an example YAML config in `configs/` and a config-driven trainer skeleton, or
-- implement starter modules for `src/evaluation/ndcg.py` and `src/rerank/pareto.py`.
-
-Open an issue or request the next step and I'll implement it.
